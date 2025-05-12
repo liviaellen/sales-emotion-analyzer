@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Call Emotion Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container { max-width: 800px; }
+        .result-box {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .face-box {
+            border: 2px solid #28a745;
+            position: absolute;
+        }
+        .video-container {
+            position: relative;
+            margin: 20px 0;
+        }
+        #preview {
+            max-width: 100%;
+            height: auto;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Sales Call Emotion Analyzer</h1>
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="image-tab" data-bs-toggle="tab" data-bs-target="#image" type="button" role="tab">Image Analysis</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="video-tab" data-bs-toggle="tab" data-bs-target="#video" type="button" role="tab">Video Analysis</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="myTabContent">
+            <!-- Image Analysis Tab -->
+            <div class="tab-pane fade show active" id="image" role="tabpanel">
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Image</h5>
+                        <form id="imageForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="imageFile" accept="image/*" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Analyze Image</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="loading" id="imageLoading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing image...</p>
+                </div>
+
+                <div class="result-box" id="imageResult" style="display: none;">
+                    <h5>Analysis Results</h5>
+                    <div id="imagePreview" class="video-container"></div>
+                    <div id="imageDetails"></div>
+                </div>
+            </div>
+
+            <!-- Video Analysis Tab -->
+            <div class="tab-pane fade" id="video" role="tabpanel">
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Video</h5>
+                        <form id="videoForm" enctype="multipart/form-data">
+                            <div class="mb-3">
+                                <input type="file" class="form-control" id="videoFile" accept="video/*" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Analyze Video</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="loading" id="videoLoading">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Processing video...</p>
+                </div>
+
+                <div class="result-box" id="videoResult" style="display: none;">
+                    <h5>Analysis Results</h5>
+                    <div id="videoPreview" class="video-container"></div>
+                    <div id="videoDetails"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Image Analysis
+        document.getElementById('imageForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const file = document.getElementById('imageFile').files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Show loading
+            document.getElementById('imageLoading').style.display = 'block';
+            document.getElementById('imageResult').style.display = 'none';
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Display results
+                const resultDiv = document.getElementById('imageResult');
+                const previewDiv = document.getElementById('imagePreview');
+                const detailsDiv = document.getElementById('imageDetails');
+
+                // Create preview with face boxes
+                const img = document.createElement('img');
+                img.id = 'preview';
+                img.src = URL.createObjectURL(file);
+                previewDiv.innerHTML = '';
+                previewDiv.appendChild(img);
+
+                // Add face boxes
+                data.faces.forEach(face => {
+                    const box = document.createElement('div');
+                    box.className = 'face-box';
+                    box.style.left = face.bbox[0] + 'px';
+                    box.style.top = face.bbox[1] + 'px';
+                    box.style.width = face.bbox[2] + 'px';
+                    box.style.height = face.bbox[3] + 'px';
+                    previewDiv.appendChild(box);
+                });
+
+                // Display details
+                detailsDiv.innerHTML = `
+                    <h6>Detected Faces: ${data.faces.length}</h6>
+                    ${data.faces.map((face, i) => `
+                        <div class="mt-3">
+                            <h6>Face ${i + 1}</h6>
+                            <p>Emotion: ${['Angry', 'Disgust', 'Fear', 'Happy', 'Sad', 'Surprise', 'Neutral'][face.emotion]}</p>
+                            <p>Confidence: ${(face.confidence * 100).toFixed(1)}%</p>
+                            <p>Reliable: ${face.is_reliable ? 'Yes' : 'No'}</p>
+                        </div>
+                    `).join('')}
+                `;
+
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error analyzing image');
+            } finally {
+                document.getElementById('imageLoading').style.display = 'none';
+            }
+        });
+
+        // Video Analysis
+        document.getElementById('videoForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const file = document.getElementById('videoFile').files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Show loading
+            document.getElementById('videoLoading').style.display = 'block';
+            document.getElementById('videoResult').style.display = 'none';
+
+            try {
+                const response = await fetch('/analyze-video', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                // Display results
+                const resultDiv = document.getElementById('videoResult');
+                const previewDiv = document.getElementById('videoPreview');
+                const detailsDiv = document.getElementById('videoDetails');
+
+                // Create video preview
+                const video = document.createElement('video');
+                video.controls = true;
+                video.style.maxWidth = '100%';
+                video.src = data.results.output_path;
+                previewDiv.innerHTML = '';
+                previewDiv.appendChild(video);
+
+                // Display details
+                detailsDiv.innerHTML = `
+                    <h6>Analysis Results</h6>
+                    <p>Duration: ${data.results.duration.toFixed(1)} seconds</p>
+                    <p>Engagement Score: ${data.results.engagement_score.toFixed(1)}%</p>
+                    <h6>Metrics</h6>
+                    <p>Positive Time: ${data.results.metrics.positive_time.toFixed(1)} seconds</p>
+                    <p>Negative Time: ${data.results.metrics.negative_time.toFixed(1)} seconds</p>
+                    <p>Neutral Time: ${data.results.metrics.neutral_time.toFixed(1)} seconds</p>
+                    <p>Emotion Changes: ${data.results.metrics.emotion_changes}</p>
+                `;
+
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error analyzing video');
+            } finally {
+                document.getElementById('videoLoading').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
