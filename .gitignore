@@ -25,6 +25,7 @@ venv/
 env/
 ENV/
 .env
+.python-version
 
 # IDE
 .idea/
@@ -43,29 +44,44 @@ artifacts/
 *.pt
 *.ckpt
 *.log
+output_tmp*.mp4
+temp_*.mp4
+
+# Data files
+data/
+data/fer2013/
+*.csv
+*.json
+*.dat
+*.h5
+*.hdf5
+*.npy
+*.npz
+*.pkl
+*.pickle
+
+# Model files
+models/weights/
+models/checkpoints/
+models/saved_models/
+artifacts/saved_models/
+*.weights
+*.model
+*.bin
+*_best_model_*.pth
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+.temp/
+*.tmp
+*.temp
 
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
-
-# Distribution / packaging
-.Python
-env/
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
+notebook/
 
 # Unit test / coverage reports
 htmlcov/
@@ -80,4 +96,21 @@ coverage.xml
 
 # Logs
 logs/
+artifacts/logs/
 *.log
+
+data/fer2013/
+data/*
+videos/
+artifacts/
+*.mp4
+*.avi
+*.mov
+*.pth
+*.pt
+*.json
+*.csv
+*.jsonl
+*.jsonl.gz
+*.jsonl.tar.gz
+*.jsonl.tar.gz.part
