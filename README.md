@@ -1,7 +1,10 @@
 # Sales Call Emotion Analyzer
+![Application Cover](image_source/cover.webp)
+
 
 A deep learning-based application for analyzing emotions and engagement in sales call videos from Zoom recordings. The system uses computer vision and deep learning to detect facial expressions and provide real-time analysis of emotional patterns during sales calls.
 
+![Statistics](image_source/stats.webp)
 ## Quick Start
 
 1. **Install Prerequisites**:
@@ -44,9 +47,6 @@ A deep learning-based application for analyzing emotions and engagement in sales
 
 ## Screenshots
 
-### Application Interface
-
-![Application Cover](image_source/cover.webp)
 
 ### Source - FER 2013 Emotion Data
 
