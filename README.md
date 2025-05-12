@@ -1,136 +1,248 @@
 # Sales Call Emotion Analyzer
 
-A deep learning-based application that analyzes emotions in sales call recordings to help understand customer engagement and sentiment.
+A deep learning-based application for analyzing emotions and engagement in sales call videos from Zoom recordings. The system uses computer vision and deep learning to detect facial expressions and provide real-time analysis of emotional patterns during sales calls.
+
+## Quick Start
+
+1. **Install Prerequisites**:
+   ```bash
+   # Install system dependencies
+   brew install python3
+   pip3 install virtualenv
+   ```
+
+2. **Setup Environment**:
+   ```bash
+   # Create and activate virtual environment
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+   # Install Python dependencies
+   pip install -r requirements.txt
+   ```
+
+3. **Run the Application**:
+   ```bash
+   # For video analysis
+   streamlit run app/streamlit_app.py
+   ```
 
 ## Features
 
-- **Emotion Detection**: Uses a PyTorch-based CNN model trained on FER-2013 dataset
-- **Video Analysis**: Processes Zoom recordings to track emotions over time
-- **Image Analysis**: Analyzes emotions in individual images
-- **Multiple Interfaces**:
-  - FastAPI web interface with real-time analysis
-  - Streamlit dashboard with interactive visualizations
-- **PDF Reports**: Generates detailed reports with emotion analytics
+- Emotion detection in Zoom video recordings
+- Engagement scoring based on emotional patterns
+- Face tracking and detection
+- Support for multiple model architectures
+- Web-based interface using Streamlit
+- PDF report generation
 
 ## Project Structure
-
 ```
-sales-emotion-analyzer/
-├── models/
-│   ├── emotion_model.py      # PyTorch model architecture
-│   ├── train.py             # Training script
-│   └── detect_emotions.py   # Emotion detection pipeline
-├── utils/
-│   ├── video_reader.py      # Video processing utilities
-│   ├── face_detector.py     # Face detection utilities
-│   └── emotion_predictor.py # Emotion prediction utilities
+engagementdetector/
 ├── app/
-│   ├── fastapi_app.py       # FastAPI web application
-│   ├── streamlit_app.py     # Streamlit dashboard
-│   └── generate_report.py   # PDF report generation
-├── data/                    # Sample data and model weights
-├── reports/                 # Generated reports
-├── static/                  # Static files for web interface
-├── templates/               # HTML templates
+│   └── streamlit_app.py      # Streamlit web interface
+├── models/
+│   ├── emotion_model.py      # Model architectures
+│   ├── detect_emotions.py    # Emotion detection logic
+│   └── train.py             # Model training code
+├── data/
+│   └── fer2013/             # FER2013 dataset
+├── artifacts/
+│   ├── saved_models/        # Trained model checkpoints
+│   └── logs/                # Training logs
+├── videos/                  # Processed video outputs
 ├── config.py               # Configuration settings
-├── requirements.txt        # Python dependencies
-└── .python-version         # Python version (3.10.x)
+└── requirements.txt        # Project dependencies
 ```
 
-## Installation
+## Detailed Usage Guide
 
-1. Clone the repository:
+### Video Analysis
 
+1. Start the Streamlit interface:
    ```bash
-   git clone https://github.com/liviaellen/engagementdetector.git
-   cd engagementdetector
+   streamlit run app/streamlit_app.py
    ```
-2. Install Python dependencies:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Download the pre-trained model:
+2. Upload your Zoom recording:
+   - Supported formats: MP4
+   - Ensure video is clear and well-lit
+   - Face should be clearly visible
 
-   ```bash
-   python models/download_model.py
+3. View the results:
+   - Processed video with emotion labels
+   - Engagement metrics
+   - Emotion duration statistics
+   - PDF report generation
+
+## Data Preparation
+
+### FER2013 Dataset Setup
+
+1. Download the FER2013 dataset:
+   - Visit the [FER2013 dataset page](https://www.kaggle.com/datasets/msambare/fer2013)
+   - Download the `fer2013.csv` file
+
+2. Place the CSV file:
    ```
+   data/fer2013/
+   └── fer2013.csv
+   ```
+
+3. CSV File Format:
+   ```
+   emotion,pixels,Usage
+   0,48 48 48 ...,Training
+   1,48 48 48 ...,PublicTest
+   2,48 48 48 ...,PrivateTest
+   ```
+   Where:
+   - emotion: 0-6 (angry, disgust, fear, happy, sad, surprise, neutral)
+   - pixels: space-separated pixel values (48x48 grayscale)
+   - Usage: Training, PublicTest, or PrivateTest
+
+4. Data Preprocessing (handled automatically):
+   - Images are loaded from pixel values in CSV
+   - Resized to 48x48 pixels
+   - Normalized to [0,1] range
+   - Augmented with:
+     - Random horizontal flips
+     - Random rotations (±10 degrees)
+     - Random brightness adjustments
+     - Random contrast adjustments
+
+5. Data Splits (based on Usage column):
+   - Training set: Usage = "Training"
+   - Validation set: Usage = "PublicTest"
+   - Test set: Usage = "PrivateTest"
+
+## Engagement Scoring System
+
+The system calculates engagement based on emotional patterns:
+
+### Emotion Weights
+| Emotion  | Weight | Description                    |
+|----------|--------|--------------------------------|
+| Happy    | 1.0    | Highest positive engagement    |
+| Surprise | 0.8    | High positive engagement       |
+| Neutral  | 0.5    | Neutral engagement             |
+| Sad      | 0.3    | Low positive engagement        |
+| Fear     | 0.2    | Very low positive engagement   |
+| Angry    | 0.1    | Very low positive engagement   |
+| Disgust  | 0.1    | Very low positive engagement   |
+
+### Score Calculation
+- Final score ranges from 0 to 1
+- Maximum score (1.0): Happy emotion with 100% confidence
+- Minimum score (0.0): Disgust/Angry emotion with 0% confidence
+- System tracks engagement scores over time to calculate:
+  - Average engagement
+  - Engagement trend
+  - Temporal patterns
 
 ## Model Training
 
-The project uses a PyTorch-based CNN model trained on the FER-2013 dataset. You can train the model in two ways:
+To train a new model:
 
-### 1. Using Default Settings (Recommended)
+1. Prepare your dataset in the FER2013 format
+2. Place it in the `data/fer2013` directory
+3. Run the training script:
+   ```bash
+   python -m models.train
+   ```
 
-```bash
-python models/train.py
+## Configuration
+
+Create a `.env` file with your settings:
+```env
+# Device Configuration
+DEVICE_TYPE=auto  # Options: auto, mps, cuda, cpu
+NUM_WORKERS=4
+BATCH_SIZE=64
+PIN_MEMORY=true
+
+# Training Configuration
+NUM_EPOCHS=50
+LEARNING_RATE=0.001
+MODEL_TYPE=modern  # Options: modern, regularized, original, transfer
+MODEL_TYPE_PROD=original  # Model type for production/inference
+MODEL_PATH=artifacts/saved_models/original_best_model_20250511_153151.pth
+
+# Dataset Configuration
+DATA_DIR=data/fer2013
+CSV_FILE=fer2013.csv
+
+# Model Configuration
+CONFIDENCE_THRESHOLD=0.5  # Minimum confidence for predictions
+SAVE_BEST_ONLY=true
+
+# Video Analysis Configuration
+ANALYSIS_INTERVAL=1.0  # Time between frame analyses in seconds
 ```
 
-This uses the following default settings from `config.py`:
+## Repository Management
 
-- 50 epochs
-- Batch size of 64
-- Learning rate of 0.001
-- Modern model architecture
-- Automatic device selection (MPS for Mac, CUDA for NVIDIA GPUs, CPU as fallback)
+### Files Not Tracked by Git
 
-### 2. With Custom Settings
+The following files and directories are intentionally not tracked by Git:
 
-```bash
-python models/train.py --data_dir data/fer2013 --epochs 50 --batch_size 32
-```
+1. **Data Files**
+   - `data/` directory and all contents
+   - All CSV, JSON, and dataset files
+   - FER2013 dataset files
 
-### Training Process
+2. **Model Files**
+   - `models/weights/`
+   - `models/checkpoints/`
+   - `models/saved_models/`
+   - `artifacts/saved_models/`
+   - All model weight files (*.pth, *.pt, *.ckpt)
 
-The training script will:
+3. **Video Files**
+   - `videos/` directory
+   - All video files (*.mp4)
+   - Temporary video files (output_tmp*.mp4, temp_*.mp4)
 
-1. Load the FER-2013 dataset from `data/fer2013/fer2013.csv`
-2. Split data into training (80%) and validation (20%) sets
-3. Train the model with progress bars showing loss and accuracy
-4. Save the best model and final model in `artifacts/saved_models/`
-5. Save training logs in `artifacts/logs/`
+4. **Environment Files**
+   - `.env` file
+   - Virtual environment directories (venv/, env/)
+   - Python version files (.python-version)
 
-### Configuration
+5. **Logs and Artifacts**
+   - `artifacts/` directory
+   - `logs/` directory
+   - All log files (*.log)
 
-You can customize training parameters in `config.py`:
+### Getting Started with a Fresh Clone
 
-- `NUM_EPOCHS`: Number of training epochs
-- `BATCH_SIZE`: Batch size for training
-- `LEARNING_RATE`: Initial learning rate
-- `MODEL_TYPE`: Model architecture ('modern', 'regularized', or 'original')
-- `DEVICE_TYPE`: Training device ('auto', 'mps', 'cuda', or 'cpu')
+After cloning the repository, you'll need to:
 
-## Usage
+1. Create a `.env` file with your configuration
+2. Download the FER2013 dataset to `data/fer2013/`
+3. Create necessary directories:
+   ```bash
+   mkdir -p data/fer2013
+   mkdir -p models/weights
+   mkdir -p models/checkpoints
+   mkdir -p models/saved_models
+   mkdir -p artifacts/saved_models
+   mkdir -p artifacts/logs
+   mkdir -p videos
+   ```
 
-### FastAPI Web Interface
+## Troubleshooting
 
-Run the FastAPI server:
+### Common Issues
 
-```bash
-python app.py --mode fastapi
-```
+1. **Video Processing Errors**
+   - Ensure video is in MP4 format
+   - Check video file permissions
+   - Verify sufficient disk space
 
-Then open http://localhost:8000 in your browser.
-
-### Streamlit Dashboard
-
-Run the Streamlit app:
-
-```bash
-python app.py --mode streamlit
-```
-
-Then open http://localhost:8501 in your browser.
-
-## API Documentation
-
-The FastAPI interface provides the following endpoints:
-
-- `GET /`: Web interface
-- `POST /analyze`: Analyze emotions in an image
-- `POST /analyze-video`: Analyze emotions in a video
-
-For detailed API documentation, visit http://localhost:8000/docs when running the FastAPI server.
+2. **Model Loading Errors**
+   - Verify model path in `.env` file
+   - Check model file exists in specified location
+   - Ensure correct model architecture is selected
 
 ## Contributing
 
@@ -140,72 +252,24 @@ For detailed API documentation, visit http://localhost:8000/docs when running th
 4. Push to the branch
 5. Create a Pull Request
 
+## Contributors
+
+- [Livia Ellen](https://github.com/liviaellen) - Project Lead & Developer
+- [Vitoria Soria](https://github.com/vitoriasoria) - Developer
+- [Rafael Cisneros](https://github.com/rafaelcisneros) - Developer
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgments
 
-- FER-2013 dataset for emotion recognition
-- PyTorch team for the deep learning framework
-- FastAPI and Streamlit teams for the web frameworks
+- FER2013 dataset
+- OpenCV for computer vision tasks
+- PyTorch for deep learning
+- Streamlit for the web interface
 
-**Student Engagement Detection System in E-Learning Environment using OpenCV and CNN**
+## Related Resources
 
-The student engagement detection system works by detecting student eye gaze and facial expression using OpenCV technology, FER-2013 dataset and CNN (convolutional neural network) method, receiving input through video file input or real-time webcam feed. The system will report on
-the student engagement level "engaged" if the student's eyes are staring at the screen
-and student facial expression showing a neutral or positive impression.
-
-Paper : https://bit.ly/thesis-paper
-
-Project Link : https://github.com/liviaellen/engagementdetector
-
-Video Presentation : https://bit.ly/ellenskripsi
-
-The demo could be found here:
-The demo video is in Indonesian language.
-
-**How to Install the engagement detector:**
-
-1. Install prerequisites: homebrew, pip, python3, and mkvirtualenv, GNU Parallel
-2. Create and access a python virtual environment
-3. Install the prequisited python library by typing this command
-   ``pip3 install -r requirements.txt``
-
-**How to Run the Engagement Detector**
-
-**Input : Existing Video**
-
-1. If you want to process an existing video, run this command on the root directory
-   ``parallel ::: "python eyegaze.py" "python emotion.py"``
-   The command will process the input.mov video on the root directory as the input, make sure you rename the video you want to process as input.mov. If you want to change the default input name, change it in the .py code.
-2. After the process finished, it will give you 4 output, resultEyegaze.txt and resultEmotion.txt contaning the analyzed result and video files output_eyegaze.mp4 and output_emotion.mp4 containing the anotated video.
-
-**Input : Real Time Webcam**
-
-1. If you want to process a real time video, run this command on the ./cam directory
-   ``parallel ::: "python eyegaze_cam.py" "python emotion_cam.py"``
-   The program will open your webcam and analyze your engagement.
-2. After the process finished, it will give you 4 output, resultEyegaze.txt and resultEmotion.txt contaning the analyzed result and video files output_eyegaze.mp4 and output_emotion.mp4 containing the anotated video.
-
----
-
-Bahasa - Indonesian Language
-
-SISTEM PENDETEKSI ENGAGEMENT SISWA DALAM LINGKUNGAN E-LEARNING DENGAN TEKNOLOGI OPENCV BERBASIS CNN
-Livia Ellen
-
-1. Sebelum menjalankan program, harap install prequisite berupa homebrew, pip, python3 dan mkvirtualenv, GNU Parallel
-2. Masuk ke virtual environment python
-3. Install library yang dibutuhhkan dengan command
-   pip3 install -r requirements.txt
-4. Setelah semua library di-install, maka program siap dijalankan
-
-Langkah-langkah menjalankan program
-
-1. Pastikan sudah ada file input.mov pada root directory sebagai input dari program
-2. Jalankan program eyegaze.py dan emotion.py secara bersamaan menggunakan command
-   parallel ::: "python eyegaze.py" "python emotion.py"
-3. Setelah progream dijalankan, program akan memberikan output berupa file teks resultEyegaze.txt dan resultEmotion.txt berisi nilai hasil analisa python script serta file video output_eyegaze.mp4 dan output_emotion.mp4 berisi video yang telah dianotasi oleh sistem pendeteksi engagement siswa.
-
-Notes: Jika anda menjalankan program untuk kedua kalinya, pastikan anda telah memindahkan file text dan video hasil output sebelumnya, jika tidak, program akan melakukan rewrite pada data tersebut.
+- [Medium Article: Reading Faces, Closing Deals: AI Emotion Detection for Sales Calls](https://medium.com/@racr1999/reading-faces-closing-deals-ai-emotion-detection-for-sales-calls-6d54d87b2b40)
+- [Video Demo: Sales Emotion Insight](https://liviaellen.com/sales-emotion-insight)
