@@ -55,7 +55,6 @@ A deep learning-based application for analyzing emotions and engagement in sales
 
 ### Statistics and Reports
 
-![Statistics](image_source/stats.webp)
 ![Report](image_source/report.webp)
 
 ### Image Processing
