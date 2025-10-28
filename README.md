@@ -308,5 +308,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Streamlit for the web interface
 
 ## Related Resources
-- [Medium Article: Reading Faces, Closing Deals: AI Emotion Detection for Sales Calls](https://medium.com/@racr1999/reading-faces-closing-deals-ai-emotion-detection-for-sales-calls-6d54d87b2b40)
+- [Medium Article: Turning Sales Meeting Videos into Insight: AI Emotion Detection with Deep Learning](https://ellenlivia.medium.com/turning-sales-meeting-videos-into-insight-ai-emotion-detection-with-deep-learning-0288af716647)
 - [Video Demo: Sales Emotion Insight](https://liviaellen.com/sales-emotion-insight)
